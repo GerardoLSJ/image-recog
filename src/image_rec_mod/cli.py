@@ -12,6 +12,7 @@ class ExtractorType(str, Enum):
     OCR = "ocr"
     GEMINI_FLASH = "gemini-flash"
     QWEN_INLINE_CPU = "qwen-inline-cpu"
+    QWEN_INLINE_GPU = "qwen-inline-gpu"
     QWEN_VLLM = "qwen-vllm"
     SMOL_VLLM = "smol-vllm"
 

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pyenv install:*)"
+      "Bash(pyenv install:*)",
+      "Bash(poetry --version:*)",
+      "Bash(curl:*)",
+      "Bash(python -)",
+      "Bash(powershell.exe -Command \"[Environment]::SetEnvironmentVariable(''Path'', [Environment]::GetEnvironmentVariable(''Path'', ''User'') + '';C:\\Users\\gerar\\AppData\\Roaming\\Python\\Scripts'', ''User'')\")"
     ],
     "deny": []
   }

@@ -29,6 +29,8 @@ Once the installation is complete, you can use the `image-recog` command to extr
 poetry run image-recog <path-to-image> --extractor <extractor-type>
 ```
 
+$env:VARIABLE_NAME="value"
+
 ### Arguments
 
 *   `<path-to-image>`: The path to the image file you want to process.
@@ -36,6 +38,7 @@ poetry run image-recog <path-to-image> --extractor <extractor-type>
     *   `ocr`: Uses the Tesseract OCR engine.
     *   `gemini-flash`: Uses the Google Gemini 2.0 Flash Experimental model. Requires a `GOOGLE_API_KEY` environment variable.
     *   `qwen-inline-cpu`: Runs the `Qwen/Qwen2-VL-2B-Instruct` model locally on the CPU.
+    *   `qwen-inline-gpu`: Runs the `Qwen/Qwen2-VL-2B-Instruct` model locally on the GPU.
     *   `qwen-vllm`: Connects to a `vllm` server running the `Qwen/Qwen2-VL-2B-Instruct` model.
     *   `smol-vllm`: Connects to a `vllm` server running the `HuggingFaceTB/SmolVLM-2.2B-Instruct` model.
 
@@ -52,6 +55,9 @@ poetry run image-recog src/image_rec_mod/test2.webp --extractor ocr
 
 # To use a remote VLM model (make sure the vLLM server is running first)
 poetry run image-recog src/image_rec_mod/test2.webp --extractor qwen-vllm
+
+# Example with Qwen inline GPU
+poetry run image-recog src/image_rec_mod/test2.webp --extractor qwen-inline-gpu
 
 # Example with SmolVLM
 poetry run image-recog src/image_rec_mod/test2.webp --extractor smol-vllm
@@ -115,3 +121,16 @@ To use the `qwen-vllm` or `smol-vllm` extractors, you need to have a `vllm` serv
 └── tests
     ├── test_image_rec_mod.py
     └── test_webapp.py
+
+
+
+
+gerry-ub@Midgard:/mnt/c/Users/gerar/Projects/ubuntu-py$ source venv/bin/activate
+
+wsl.exe -d Ubuntu
+
+/home/gerry-ub/projects/ubuntu-py
+
+C:\Users\gerar\Projects\image-recog\src\test6.webp
+
+poetry run image-recog C:\Users\gerar\Projects\image-recog\src\test6.webp --extractor qwen-inline-gpu

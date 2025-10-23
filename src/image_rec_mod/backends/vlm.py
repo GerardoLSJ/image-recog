@@ -34,16 +34,33 @@ class LocalVLMExtractor(VLMExtractor):
         logger = logging.getLogger("vlm_debug")
         logger.info(f"Initializing Qwen2VLForConditionalGeneration with model_name={model_name}, device={device}")
         if torch.cuda.is_available():
+            logger.info(f"PyTorch version: {torch.__version__}")
             logger.info(f"CUDA is available. Device count: {torch.cuda.device_count()}")
+            logger.info(f"CUDA version: {torch.version.cuda}")
+            logger.info(f"cuDNN version: {torch.backends.cudnn.version()}")
             logger.info(f"Current CUDA device: {torch.cuda.current_device()}")
             logger.info(f"CUDA device name: {torch.cuda.get_device_name(torch.cuda.current_device())}")
         else:
             logger.info("CUDA is NOT available. Using CPU.")
-        self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-            model_name,
-            device_map=device,
-        )
-        logger.info("Model loaded successfully.")
+        if device != "cpu" and not torch.cuda.is_available():
+            logger.warning(f"Requested device '{device}' but CUDA is not available. Falling back to CPU.")
+            device = "cpu"
+        
+        try:
+            self.model = Qwen2VLForConditionalGeneration.from_pretrained(
+                model_name,
+                device_map=device,
+            )
+            logger.info(f"Model loaded successfully on device: {self.model.device}")
+        except RuntimeError as e:
+            logger.error(f"Failed to load model on device '{device}': {e}")
+            if "CUDA out of memory" in str(e):
+                return {"error": "CUDA out of memory. Try a smaller model or free up GPU memory."}
+            return {"error": f"Failed to load model: {e}"}
+        except Exception as e:
+            logger.error(f"An unexpected error occurred during model loading: {e}")
+            return {"error": f"An unexpected error occurred during model loading: {e}"}
+
         self.processor = AutoProcessor.from_pretrained(model_name)
         logger.info("Processor loaded successfully.")
 

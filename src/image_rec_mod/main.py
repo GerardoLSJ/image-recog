@@ -23,6 +23,8 @@ def get_extractor(name: str) -> Extractor:
         return RemoteLLMExtractor("gemini-2.0-flash-exp")
     if name == "qwen-inline-cpu":
         return LocalVLMExtractor("Qwen/Qwen2-VL-2B-Instruct", device="cpu")
+    if name == "qwen-inline-gpu":
+        return LocalVLMExtractor("Qwen/Qwen2-VL-2B-Instruct", device="cuda")
     if name == "qwen-vllm":
         return RemoteVLLMExtractor("Qwen/Qwen2-VL-2B-Instruct")
     if name == "smol-vllm":
