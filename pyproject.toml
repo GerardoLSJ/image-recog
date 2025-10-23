@@ -1,0 +1,28 @@
+[project]
+name = "image-recog"
+version = "0.1.0"
+description = "A project to extract runner numbers from images."
+authors = [
+    {name = "Roo"}
+]
+readme = "README.md"
+requires-python = "^3.9"
+dependencies = [
+    "pytesseract>=0.3.10",
+    "Pillow>=9.5.0",
+    "typer[all]>=0.12.3",
+    "numpy (>=1.26.0,<1.27.0)",
+    "google-generativeai>=0.8.0",
+]
+
+[tool.poetry]
+packages = [{include = "image_rec_mod", from = "src"}]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[project.scripts]
+image-recog = "image_rec_mod.cli:app"
