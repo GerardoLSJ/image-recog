@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import torch
 from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
 from qwen_vl_utils import process_vision_info
@@ -18,41 +19,42 @@ class VLMExtractor(Extractor):
         raise NotImplementedError("VLM extractor is not yet implemented")
 
 
-class Qwen2VL2BInstructExtractor(VLMExtractor):
+class LocalVLMExtractor(VLMExtractor):
     """
-    Extractor using the Qwen2-VL-2B-Instruct model.
-
-    This extractor uses the Qwen2-VL-2B-Instruct model from Hugging Face to
-    extract numerical data from images. It requires the `transformers` and
-    `qwen-vl-utils` packages to be installed.
+    Extractor for Vision Language Models running locally.
     """
 
-    def __init__(self):
+    def __init__(self, model_name: str):
         """
         Initializes the extractor by loading the model and processor.
         """
         self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-            "Qwen/Qwen2-VL-2B-Instruct",
+            model_name,
             device_map="cpu",
         )
-        self.processor = AutoProcessor.from_pretrained("Qwen/Qwen2-VL-2B-Instruct")
+        self.processor = AutoProcessor.from_pretrained(model_name)
 
     def extract(self, image_path: str) -> dict:
         """
-        Extracts a number from the given image using the Qwen2-VL-2B-Instruct model.
-
-        Args:
-            image_path: The path to the image file.
-
-        Returns:
-            A dictionary containing the extracted number, image name, and certainty.
+        Extracts a number from the given image using the specified model.
         """
         messages = [
             {
                 "role": "user",
                 "content": [
                     {"type": "image", "image": f"file://{os.path.abspath(image_path)}"},
-                    {"type": "text", "text": "What is the number in this image?"},
+                    {"type": "text", "text": """You are a specialized image analyzer for extracting runner bib numbers.
+
+TASK: Identify and extract the bib number worn on a runner's chest/torso.
+
+RESPONSE FORMAT: Return ONLY a valid JSON object with no additional text or markdown formatting.
+
+Success case:
+{"bib": 256}
+
+Failure cases:
+{"error": "No bib number visible on runner"}
+"""},
                 ],
             }
         ]
@@ -81,50 +83,55 @@ class Qwen2VL2BInstructExtractor(VLMExtractor):
             clean_up_tokenization_spaces=False,
         )
 
-        # Parse the number from the output string
-        match = re.search(r'\d+', output_text[0])
-        extracted_number = match.group(0) if match else None
+        text = output_text[0].strip()
 
-        return {
-            "image_name": os.path.basename(image_path),
-            "number": extracted_number,
-            "certainty": 0.95,  # Placeholder certainty
-        }
+        # The model might wrap the JSON in markdown, so we strip it
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
 
-class Qwen2VL2BInstructVLLMExtractor(VLMExtractor):
+        try:
+            # Use a more lenient regex to find the JSON object
+            match = re.search(r'\{.*\}', text, re.DOTALL)
+            if match:
+                json_text = match.group(0)
+                # The model sometimes returns numbers with leading zeros, which is invalid in JSON
+                # We can clean this up before parsing
+                json_text = re.sub(r':\s*0+(\d+)', r': \1', json_text)
+                data = json.loads(json_text)
+                return data
+            else:
+                return {"error": f"No JSON object found in VLM response: {text}"}
+        except json.JSONDecodeError:
+            return {"error": f"Failed to decode JSON from VLM response: {text}"}
+        except Exception as e:
+            return {"error": f"An error occurred: {e}"}
+
+
+class RemoteVLLMExtractor(VLMExtractor):
     """
-    Extractor using the Qwen2-VL-2B-Instruct model served with vLLM.
-
-    This extractor sends requests to a vLLM server that is serving the
-    Qwen2-VL-2B-Instruct model. It requires the `requests` package to be
-    installed.
+    Extractor for Vision Language Models served with vLLM.
     """
 
-    def __init__(self, url="http://localhost:8000/v1/chat/completions"):
+    def __init__(self, model_name: str, url="http://localhost:8000/v1/chat/completions"):
         """
-        Initializes the extractor with the vLLM server URL.
-
-        Args:
-            url: The URL of the vLLM server's chat completions endpoint.
+        Initializes the extractor with the vLLM server URL and model name.
         """
+        self.model_name = model_name
         self.url = url
 
     def extract(self, image_path: str) -> dict:
         """
         Extracts a number from the given image by sending a request to the vLLM server.
-
-        Args:
-            image_path: The path to the image file.
-
-        Returns:
-            A dictionary containing the extracted number, image name, and certainty.
         """
         with open(image_path, "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
 
         headers = {"Content-Type": "application/json"}
         data = {
-            "model": "Qwen/Qwen2-VL-2B-Instruct",
+            "model": self.model_name,
             "messages": [
                 {
                     "role": "user",
@@ -140,13 +147,21 @@ class Qwen2VL2BInstructVLLMExtractor(VLMExtractor):
             "max_tokens": 128,
         }
 
-        response = requests.post(self.url, headers=headers, json=data)
-        response.raise_for_status()
-        
-        extracted_number = response.json()["choices"][0]["message"]["content"].strip()
+        try:
+            response = requests.post(self.url, headers=headers, json=data)
+            response.raise_for_status()
+            
+            text = response.json()["choices"][0]["message"]["content"].strip()
+            
+            # The model might wrap the JSON in markdown, so we strip it
+            if text.startswith("```json"):
+                text = text[7:]
+            if text.endswith("```"):
+                text = text[:-3]
+            text = text.strip()
 
-        return {
-            "image_name": os.path.basename(image_path),
-            "number": extracted_number,
-            "certainty": 0.95,  # Placeholder certainty
-        }
+            return json.loads(text)
+        except requests.exceptions.RequestException as e:
+            return {"error": f"HTTP request failed: {e}"}
+        except (json.JSONDecodeError, KeyError):
+            return {"error": f"Failed to parse response from vLLM server: {response.text}"}

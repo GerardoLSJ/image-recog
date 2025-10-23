@@ -14,18 +14,18 @@ if api_key:
     genai.configure(api_key=api_key)
 
 
-class LLMExtractor(Extractor):
+class RemoteLLMExtractor(Extractor):
     """
-    Extractor that uses a Large Language Model to extract the bib number.
+    Extractor that uses a remote Large Language Model to extract the bib number.
     """
 
-    def __init__(self, model: str = None):
-        self.model_name = model or os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
+    def __init__(self, model: str):
+        self.model_name = model
         if not api_key:
             raise ValueError("GOOGLE_API_KEY environment variable not set.")
         self.model = genai.GenerativeModel(self.model_name)
 
-    def extract(self, file: Path) -> Optional[int]:
+    def extract(self, file: Path) -> dict:
         """
         Extract the bib number from an image file.
 
@@ -33,7 +33,7 @@ class LLMExtractor(Extractor):
             file: Path to the image file.
 
         Returns:
-            The extracted bib number, or None if no number could be found.
+            A dictionary containing the extracted bib number or an error.
         """
 
         prompt = """You are a specialized image analyzer for extracting runner bib numbers.
@@ -78,20 +78,16 @@ CRITICAL:
 
             data = json.loads(text)
             if "bib" in data:
-                return int(data["bib"])
+                return data
             elif "error" in data:
-                print(f"LLM extraction failed: {data['error']}")
-                return None
+                return data
             else:
-                print(f"LLM returned unknown JSON format: {text}")
-                return None
+                return {"error": f"LLM returned unknown JSON format: {text}"}
 
         except json.JSONDecodeError:
             # It's possible the model just returns a number.
             if text.isdigit():
-                return int(text)
-            print(f"Failed to decode JSON from LLM response: {text}")
-            return None
+                return {"bib": int(text)}
+            return {"error": f"Failed to decode JSON from LLM response: {text}"}
         except Exception as e:
-            print(f"An error occurred: {e}")
-            return None
+            return {"error": f"An error occurred: {e}"}

@@ -1,12 +1,9 @@
 from pathlib import Path
 from typing import Optional
 
-from image_rec_mod.backends.llm import LLMExtractor
+from image_rec_mod.backends.llm import RemoteLLMExtractor
 from image_rec_mod.backends.ocr import TesseractExtractor as OCRExtractor
-from image_rec_mod.backends.vlm import (
-    VLMExtractor,
-    Qwen2VL2BInstructExtractor,
-)
+from image_rec_mod.backends.vlm import LocalVLMExtractor, RemoteVLLMExtractor
 from image_rec_mod.extractor import Extractor
 
 
@@ -22,16 +19,18 @@ def get_extractor(name: str) -> Extractor:
     """
     if name == "ocr":
         return OCRExtractor()
-    if name == "vlm":
-        return VLMExtractor()
-    if name == "llm":
-        return LLMExtractor()
-    if name == "qwen2-vl-2b-instruct":
-        return Qwen2VL2BInstructExtractor()
+    if name == "gemini-flash":
+        return RemoteLLMExtractor("gemini-2.0-flash-exp")
+    if name == "qwen-local":
+        return LocalVLMExtractor("Qwen/Qwen2-VL-2B-Instruct")
+    if name == "qwen-vllm":
+        return RemoteVLLMExtractor("Qwen/Qwen2-VL-2B-Instruct")
+    if name == "smolvlm-vllm":
+        return LocalVLMExtractor("HuggingFaceTB/SmolVLM-2.2B-Instruct")
     raise ValueError(f"Unknown extractor: {name}")
 
 
-def extract_bib_number(file: Path, extractor_name: str) -> Optional[int]:
+def extract_bib_number(file: Path, extractor_name: str) -> dict:
     """
     Extract the bib number from an image file using the specified extractor.
 

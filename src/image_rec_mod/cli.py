@@ -10,9 +10,10 @@ app = typer.Typer()
 
 class ExtractorType(str, Enum):
     OCR = "ocr"
-    VLM = "vlm"
-    LLM = "llm"
-    QWEN2_VL_2B_INSTRUCT = "qwen2-vl-2b-instruct"
+    GEMINI_FLASH = "gemini-flash"
+    QWEN_LOCAL = "qwen-local"
+    QWEN_VLLM = "qwen-vllm"
+    SMOLVLM_VLLM = "smolvlm-vllm"
 
 
 @app.command()
@@ -26,10 +27,12 @@ def run(
     Extracts information from an image using the specified extractor.
     """
     result = extract_bib_number(image_path, extractor.value)
-    if result is not None:
-        print(f"Bib number found: {result}")
+    if "bib" in result:
+        print(f"Bib number found: {result['bib']}")
+    elif "error" in result:
+        print(f"Error: {result['error']}")
     else:
-        print("No bib number found.")
+        print(f"Unknown response format: {result}")
 
 
 if __name__ == "__main__":
