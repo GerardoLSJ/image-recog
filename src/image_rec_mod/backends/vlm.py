@@ -27,12 +27,25 @@ class LocalVLMExtractor(VLMExtractor):
     def __init__(self, model_name: str, device: str = "cpu"):
         """
         Initializes the extractor by loading the model and processor.
+        Adds debug logging for CUDA and model loading.
         """
+        import logging
+        logging.basicConfig(level=logging.INFO)
+        logger = logging.getLogger("vlm_debug")
+        logger.info(f"Initializing Qwen2VLForConditionalGeneration with model_name={model_name}, device={device}")
+        if torch.cuda.is_available():
+            logger.info(f"CUDA is available. Device count: {torch.cuda.device_count()}")
+            logger.info(f"Current CUDA device: {torch.cuda.current_device()}")
+            logger.info(f"CUDA device name: {torch.cuda.get_device_name(torch.cuda.current_device())}")
+        else:
+            logger.info("CUDA is NOT available. Using CPU.")
         self.model = Qwen2VLForConditionalGeneration.from_pretrained(
             model_name,
             device_map=device,
         )
+        logger.info("Model loaded successfully.")
         self.processor = AutoProcessor.from_pretrained(model_name)
+        logger.info("Processor loaded successfully.")
 
     def extract(self, image_path: str) -> dict:
         """
@@ -118,17 +131,28 @@ class RemoteVLLMExtractor(VLMExtractor):
     def __init__(self, model_name: str, url="http://localhost:8000/v1/chat/completions"):
         """
         Initializes the extractor with the vLLM server URL and model name.
+        Adds debug logging for HTTP requests and responses.
         """
+        import logging
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger("remote_vllm_debug")
         self.model_name = model_name
         self.url = url
+        self.logger.info(f"RemoteVLLMExtractor initialized with model_name={model_name}, url={url}")
 
     def extract(self, image_path: str) -> dict:
         """
         Extracts a number from the given image by sending a request to the vLLM server.
+        Adds debug logging for request payload, response, and errors.
         """
+        import base64, json, requests, os
+        self.logger.info(f"Preparing to extract bib number from image: {image_path}")
+        image_size = os.path.getsize(image_path)
+        self.logger.info(f"Image file size: {image_size} bytes")
         with open(image_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
-
+            image_bytes = image_file.read()
+            encoded_string = base64.b64encode(image_bytes).decode("utf-8")
+        self.logger.info(f"Base64 encoded image length: {len(encoded_string)} characters")
         headers = {"Content-Type": "application/json"}
         data = {
             "model": self.model_name,
@@ -144,37 +168,39 @@ class RemoteVLLMExtractor(VLMExtractor):
                         },
                         {"type": "text", "text": """You are a specialized image analyzer for extracting runner bib numbers.
 
-TASK: Identify and extract the bib number worn on a runner's chest/torso.
+            TASK: Identify and extract the bib number worn on a runner's chest/torso.
 
-RESPONSE FORMAT: Return ONLY a valid JSON object with no additional text or markdown formatting.
+            RESPONSE FORMAT: Return ONLY a valid JSON object with no additional text or markdown formatting.
 
-Success case:
-{"bib": 256}
+            Success case:
+            {"bib": 256}
 
-Failure cases:
-{"error": "No bib number visible on runner"}
-"""},
+            Failure cases:
+            {"error": "No bib number visible on runner"}
+            """},
                     ],
                 }
             ],
             "max_tokens": 128,
         }
-
+        self.logger.info(f"Sending POST request to {self.url} with payload: {json.dumps(data)[:500]}...")
         try:
             response = requests.post(self.url, headers=headers, json=data)
+            self.logger.info(f"HTTP status: {response.status_code}")
             response.raise_for_status()
-            
+            self.logger.info(f"Raw response: {response.text[:500]}")
             text = response.json()["choices"][0]["message"]["content"].strip()
-            
             # The model might wrap the JSON in markdown, so we strip it
             if text.startswith("```json"):
                 text = text[7:]
             if text.endswith("```"):
                 text = text[:-3]
             text = text.strip()
-
+            self.logger.info(f"Parsed model output: {text}")
             return json.loads(text)
         except requests.exceptions.RequestException as e:
+            self.logger.error(f"HTTP request failed: {e}")
             return {"error": f"HTTP request failed: {e}"}
         except (json.JSONDecodeError, KeyError):
+            self.logger.error(f"Failed to parse response from vLLM server: {response.text}")
             return {"error": f"Failed to parse response from vLLM server: {response.text}"}
