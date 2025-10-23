@@ -21,12 +21,14 @@ def get_extractor(name: str) -> Extractor:
         return OCRExtractor()
     if name == "gemini-flash":
         return RemoteLLMExtractor("gemini-2.0-flash-exp")
-    if name == "qwen-local":
-        return LocalVLMExtractor("Qwen/Qwen2-VL-2B-Instruct")
+    if name == "qwen-local-cpu":
+        return LocalVLMExtractor("Qwen/Qwen2-VL-2B-Instruct", device="cpu")
+    if name == "qwen-local-gpu":
+        return LocalVLMExtractor("Qwen/Qwen2-VL-2B-Instruct", device="auto")
     if name == "qwen-vllm":
         return RemoteVLLMExtractor("Qwen/Qwen2-VL-2B-Instruct")
     if name == "smolvlm-vllm":
-        return LocalVLMExtractor("HuggingFaceTB/SmolVLM-2.2B-Instruct")
+        return LocalVLMExtractor("HuggingFaceTB/SmolVLM-2.2B-Instruct", device="auto")
     raise ValueError(f"Unknown extractor: {name}")
 
 

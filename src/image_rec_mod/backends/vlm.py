@@ -24,13 +24,13 @@ class LocalVLMExtractor(VLMExtractor):
     Extractor for Vision Language Models running locally.
     """
 
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str, device: str = "cpu"):
         """
         Initializes the extractor by loading the model and processor.
         """
         self.model = Qwen2VLForConditionalGeneration.from_pretrained(
             model_name,
-            device_map="cpu",
+            device_map=device,
         )
         self.processor = AutoProcessor.from_pretrained(model_name)
 
