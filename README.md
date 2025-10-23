@@ -34,7 +34,9 @@ poetry run image-recog <path-to-image> --extractor <extractor-type>
 *   `<path-to-image>`: The path to the image file you want to process.
 *   `--extractor`: The type of extractor to use. The available options are:
     *   `ocr` (default): Uses the Tesseract OCR engine.
-    *   `vlm`: (Placeholder) Will use a Vision Language Model.
+    *   `vlm`: Uses a Vision Language Model. The following VLM models are supported:
+        *   `qwen2-vl-2b-instruct`: Uses the [Qwen2-VL-2B-Instruct](https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct) model directly.
+        *   `qwen2-vl-2b-instruct-vllm`: Uses the [Qwen2-VL-2B-Instruct](https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct) model served with `vllm`. See VLM Server Setup for more details.
     *   `llm`: (Placeholder) Will use a Large Language Model for refinement.
 
 ### Example
@@ -49,6 +51,22 @@ poetry run image-recog src/image_rec_mod/test1.jpg --extractor ocr
 poetry run image-recog src/image_rec_mod/test2.webp --extractor ocr
 ```
 
+
+## VLM Server Setup (for `qwen2-vl-2b-instruct-vllm`)
+
+To use the `qwen2-vl-2b-instruct-vllm` extractor, you need to have a `vllm` server running with the `Qwen/Qwen2-VL-2B-Instruct` model.
+
+1.  **Install `vllm`**:
+    ```bash
+    pip install vllm
+    ```
+
+2.  **Start the server**:
+    ```bash
+    vllm serve "Qwen/Qwen2-VL-2B-Instruct"
+    ```
+
+    The server will start on `http://localhost:8000` by default.
 
 ## File Structure
 

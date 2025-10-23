@@ -12,6 +12,7 @@ class ExtractorType(str, Enum):
     OCR = "ocr"
     VLM = "vlm"
     LLM = "llm"
+    QWEN2_VL_2B_INSTRUCT = "qwen2-vl-2b-instruct"
 
 
 @app.command()

@@ -3,7 +3,10 @@ from typing import Optional
 
 from image_rec_mod.backends.llm import LLMExtractor
 from image_rec_mod.backends.ocr import TesseractExtractor as OCRExtractor
-from image_rec_mod.backends.vlm import VLMExtractor
+from image_rec_mod.backends.vlm import (
+    VLMExtractor,
+    Qwen2VL2BInstructExtractor,
+)
 from image_rec_mod.extractor import Extractor
 
 
@@ -23,6 +26,8 @@ def get_extractor(name: str) -> Extractor:
         return VLMExtractor()
     if name == "llm":
         return LLMExtractor()
+    if name == "qwen2-vl-2b-instruct":
+        return Qwen2VL2BInstructExtractor()
     raise ValueError(f"Unknown extractor: {name}")
 
 
