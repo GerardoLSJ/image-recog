@@ -11,9 +11,9 @@ app = typer.Typer()
 class ExtractorType(str, Enum):
     OCR = "ocr"
     GEMINI_FLASH = "gemini-flash"
-    QWEN_LOCAL = "qwen-local"
+    QWEN_INLINE_CPU = "qwen-inline-cpu"
     QWEN_VLLM = "qwen-vllm"
-    SMOLVLM_VLLM = "smolvlm-vllm"
+    SMOL_VLLM = "smol-vllm"
 
 
 @app.command()

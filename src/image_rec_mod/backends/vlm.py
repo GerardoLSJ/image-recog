@@ -137,10 +137,23 @@ class RemoteVLLMExtractor(VLMExtractor):
                     "role": "user",
                     "content": [
                         {
-                            "type": "image",
-                            "image": f"data:image;base64,{encoded_string}",
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{encoded_string}"
+                            },
                         },
-                        {"type": "text", "text": "What is the number in this image?"},
+                        {"type": "text", "text": """You are a specialized image analyzer for extracting runner bib numbers.
+
+TASK: Identify and extract the bib number worn on a runner's chest/torso.
+
+RESPONSE FORMAT: Return ONLY a valid JSON object with no additional text or markdown formatting.
+
+Success case:
+{"bib": 256}
+
+Failure cases:
+{"error": "No bib number visible on runner"}
+"""},
                     ],
                 }
             ],

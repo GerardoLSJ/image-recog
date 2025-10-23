@@ -35,9 +35,9 @@ poetry run image-recog <path-to-image> --extractor <extractor-type>
 *   `--extractor`: The type of extractor to use. The available options are:
     *   `ocr`: Uses the Tesseract OCR engine.
     *   `gemini-flash`: Uses the Google Gemini 2.0 Flash Experimental model. Requires a `GOOGLE_API_KEY` environment variable.
-    *   `qwen-local`: Runs the `Qwen/Qwen2-VL-2B-Instruct` model locally on the CPU.
+    *   `qwen-inline-cpu`: Runs the `Qwen/Qwen2-VL-2B-Instruct` model locally on the CPU.
     *   `qwen-vllm`: Connects to a `vllm` server running the `Qwen/Qwen2-VL-2B-Instruct` model.
-    *   `smolvlm-vllm`: Runs the `HuggingFaceTB/SmolVLM-2.2B-Instruct` model locally on the CPU.
+    *   `smol-vllm`: Connects to a `vllm` server running the `HuggingFaceTB/SmolVLM-2.2B-Instruct` model.
 
 ### Example
 
@@ -49,11 +49,17 @@ poetry run image-recog src/image_rec_mod/test1.jpg --extractor ocr
 
 # This image contains the number 15
 poetry run image-recog src/image_rec_mod/test2.webp --extractor ocr
+
+# To use a remote VLM model (make sure the vLLM server is running first)
+poetry run image-recog src/image_rec_mod/test2.webp --extractor qwen-vllm
+
+# Example with SmolVLM
+poetry run image-recog src/image_rec_mod/test2.webp --extractor smol-vllm
 ```
 
 ## VLM Server Setup (for vLLM models)
 
-To use the `qwen-vllm` or `smolvlm-vllm` extractors, you need to have a `vllm` server running with the desired model.
+To use the `qwen-vllm` or `smol-vllm` extractors, you need to have a `vllm` server running with the desired model.
 
 1.  **Install `vllm`**:
     ```bash
@@ -61,13 +67,15 @@ To use the `qwen-vllm` or `smolvlm-vllm` extractors, you need to have a `vllm` s
     ```
 
 2.  **Start the server**:
+    Due to a validation issue with the default settings in vLLM for these models, you need to specify the `--max-model-len` argument to prevent errors. A value of `2048` is recommended.
+
     *   For Qwen:
         ```bash
-        vllm serve "Qwen/Qwen2-VL-2B-Instruct"
+        vllm serve Qwen/Qwen2-VL-2B-Instruct --max-model-len 2048
         ```
-    *   For SmolVLM (if using vLLM):
+    *   For SmolVLM:
         ```bash
-        vllm serve "HuggingFaceTB/SmolVLM-2.2B-Instruct"
+        vllm serve HuggingFaceTB/SmolVLM-2.2B-Instruct --max-model-len 2048
         ```
 
     The server will start on `http://localhost:8000` by default.
