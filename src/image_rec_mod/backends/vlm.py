@@ -1,4 +1,5 @@
 import os
+import re
 import torch
 from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
 from qwen_vl_utils import process_vision_info
@@ -80,8 +81,9 @@ class Qwen2VL2BInstructExtractor(VLMExtractor):
             clean_up_tokenization_spaces=False,
         )
 
-        # Placeholder for parsing the number from the output
-        extracted_number = output_text[0].strip()
+        # Parse the number from the output string
+        match = re.search(r'\d+', output_text[0])
+        extracted_number = match.group(0) if match else None
 
         return {
             "image_name": os.path.basename(image_path),
