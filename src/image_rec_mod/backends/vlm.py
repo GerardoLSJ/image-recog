@@ -139,6 +139,16 @@ Failure cases:
         except Exception as e:
             return {"error": f"An error occurred: {e}"}
 
+    def extract_multiple_bib_numbers(self, image_paths: list[str]) -> list[dict]:
+        """
+        Extracts bib numbers from a list of images.
+        """
+        results = []
+        for image_path in image_paths:
+            result = self.extract(image_path)
+            results.append({"image": image_path, "result": result})
+        return results
+
 
 class RemoteVLLMExtractor(VLMExtractor):
     """

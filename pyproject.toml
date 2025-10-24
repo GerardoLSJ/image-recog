@@ -32,3 +32,4 @@ build-backend = "poetry.core.masonry.api"
 
 [project.scripts]
 image-recog = "image_rec_mod.cli:app"
+test-local = "image_rec_mod.local_test:test_image_folder"
