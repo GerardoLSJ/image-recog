@@ -5,7 +5,10 @@
       "Bash(poetry --version:*)",
       "Bash(curl:*)",
       "Bash(python -)",
-      "Bash(powershell.exe -Command \"[Environment]::SetEnvironmentVariable(''Path'', [Environment]::GetEnvironmentVariable(''Path'', ''User'') + '';C:\\Users\\gerar\\AppData\\Roaming\\Python\\Scripts'', ''User'')\")"
+      "Bash(powershell.exe -Command \"[Environment]::SetEnvironmentVariable(''Path'', [Environment]::GetEnvironmentVariable(''Path'', ''User'') + '';C:\\Users\\gerar\\AppData\\Roaming\\Python\\Scripts'', ''User'')\")",
+      "Bash(python:*)",
+      "Bash(poetry run python:*)",
+      "Bash(poetry run pip:*)"
     ],
     "deny": []
   }

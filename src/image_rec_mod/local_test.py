@@ -1,5 +1,7 @@
 import sys
 from pathlib import Path
+import time
+from datetime import datetime
 
 # Add the 'src' directory to the Python path to allow running this script directly
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -11,6 +13,8 @@ def test_image_folder():
     Iterates through images in the test folder, extracts bib numbers efficiently,
     and prints them.
     """
+    start_time = time.time()
+    extractor_name = "qwen-inline-gpu"
     project_root = Path(__file__).resolve().parent.parent.parent
     folder_to_test = project_root / "tests" / "test_images"
 
@@ -29,7 +33,7 @@ def test_image_folder():
     try:
         # 1. Get the extractor instance (model loads here, ONCE)
         print("Loading model...")
-        extractor = get_extractor("qwen-inline-cpu")
+        extractor = get_extractor(extractor_name)
         print("Model loaded. Extracting bib numbers...")
 
         # 2. Process all images with the new method
@@ -48,6 +52,24 @@ def test_image_folder():
 
     except Exception as e:
         print(f"  An error occurred: {e}")
+    finally:
+        end_time = time.time()
+        total_time = end_time - start_time
+        
+        summary = (
+            f"Run Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Extractor Used: {extractor_name}\n"
+            f"Image Folder: {folder_to_test}\n"
+            f"Number of Images: {len(image_paths)}\n"
+            f"Total Execution Time: {total_time:.2f} seconds\n"
+            f"--------------------------------------------------\n"
+        )
+        
+        summary_file = project_root / "logs_summaries.txt"
+        with open(summary_file, "a") as f:
+            f.write(summary)
+        
+        print(f"\nSummary written to {summary_file}")
 
 
 if __name__ == "__main__":

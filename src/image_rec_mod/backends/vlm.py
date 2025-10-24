@@ -2,6 +2,7 @@ import os
 import re
 import json
 import torch
+import time
 from transformers import AutoProcessor, Qwen2VLForConditionalGeneration
 from qwen_vl_utils import process_vision_info
 from image_rec_mod.extractor import Extractor
@@ -31,19 +32,22 @@ class LocalVLMExtractor(VLMExtractor):
         """
         import logging
         logging.basicConfig(level=logging.INFO)
-        logger = logging.getLogger("vlm_debug")
-        logger.info(f"Initializing Qwen2VLForConditionalGeneration with model_name={model_name}, device={device}")
+        self.logger = logging.getLogger("vlm_debug")
+        self.logger.info(f"Initializing Qwen2VLForConditionalGeneration with model_name={model_name}, device={device}")
+        
+        start_time = time.time()
+
         if torch.cuda.is_available():
-            logger.info(f"PyTorch version: {torch.__version__}")
-            logger.info(f"CUDA is available. Device count: {torch.cuda.device_count()}")
-            logger.info(f"CUDA version: {torch.version.cuda}")
-            logger.info(f"cuDNN version: {torch.backends.cudnn.version()}")
-            logger.info(f"Current CUDA device: {torch.cuda.current_device()}")
-            logger.info(f"CUDA device name: {torch.cuda.get_device_name(torch.cuda.current_device())}")
+            self.logger.info(f"PyTorch version: {torch.__version__}")
+            self.logger.info(f"CUDA is available. Device count: {torch.cuda.device_count()}")
+            self.logger.info(f"CUDA version: {torch.version.cuda}")
+            self.logger.info(f"cuDNN version: {torch.backends.cudnn.version()}")
+            self.logger.info(f"Current CUDA device: {torch.cuda.current_device()}")
+            self.logger.info(f"CUDA device name: {torch.cuda.get_device_name(torch.cuda.current_device())}")
         else:
-            logger.info("CUDA is NOT available. Using CPU.")
+            self.logger.info("CUDA is NOT available. Using CPU.")
         if device != "cpu" and not torch.cuda.is_available():
-            logger.warning(f"Requested device '{device}' but CUDA is not available. Falling back to CPU.")
+            self.logger.warning(f"Requested device '{device}' but CUDA is not available. Falling back to CPU.")
             device = "cpu"
         
         try:
@@ -51,23 +55,28 @@ class LocalVLMExtractor(VLMExtractor):
                 model_name,
                 device_map=device,
             )
-            logger.info(f"Model loaded successfully on device: {self.model.device}")
+            self.logger.info(f"Model loaded successfully on device: {self.model.device}")
         except RuntimeError as e:
-            logger.error(f"Failed to load model on device '{device}': {e}")
+            self.logger.error(f"Failed to load model on device '{device}': {e}")
             if "CUDA out of memory" in str(e):
-                return {"error": "CUDA out of memory. Try a smaller model or free up GPU memory."}
-            return {"error": f"Failed to load model: {e}"}
+                raise RuntimeError("CUDA out of memory. Try a smaller model or free up GPU memory.") from e
+            raise RuntimeError(f"Failed to load model: {e}") from e
         except Exception as e:
-            logger.error(f"An unexpected error occurred during model loading: {e}")
-            return {"error": f"An unexpected error occurred during model loading: {e}"}
+            self.logger.error(f"An unexpected error occurred during model loading: {e}")
+            raise RuntimeError(f"An unexpected error occurred during model loading: {e}") from e
 
         self.processor = AutoProcessor.from_pretrained(model_name)
-        logger.info("Processor loaded successfully.")
+        self.logger.info("Processor loaded successfully.")
+        
+        end_time = time.time()
+        self.logger.info(f"Model and processor loaded in {end_time - start_time:.2f} seconds.")
 
     def extract(self, image_path: str) -> dict:
         """
         Extracts a number from the given image using the specified model.
         """
+        start_time = time.time()
+        self.logger.info(f"Extracting bib number from: {image_path}")
         messages = [
             {
                 "role": "user",
@@ -131,22 +140,33 @@ Failure cases:
                 # We can clean this up before parsing
                 json_text = re.sub(r':\s*0+(\d+)', r': \1', json_text)
                 data = json.loads(json_text)
+                end_time = time.time()
+                self.logger.info(f"Extraction for {os.path.basename(image_path)} completed in {end_time - start_time:.2f} seconds.")
                 return data
             else:
+                self.logger.error(f"No JSON object found in VLM response: {text}")
                 return {"error": f"No JSON object found in VLM response: {text}"}
         except json.JSONDecodeError:
+            self.logger.error(f"Failed to decode JSON from VLM response: {text}")
             return {"error": f"Failed to decode JSON from VLM response: {text}"}
         except Exception as e:
+            self.logger.error(f"An error occurred during extraction: {e}")
             return {"error": f"An error occurred: {e}"}
 
     def extract_multiple_bib_numbers(self, image_paths: list[str]) -> list[dict]:
         """
         Extracts bib numbers from a list of images.
         """
+        total_start_time = time.time()
+        self.logger.info(f"Starting batch extraction for {len(image_paths)} images.")
         results = []
-        for image_path in image_paths:
+        for i, image_path in enumerate(image_paths):
+            self.logger.info(f"Processing image {i+1}/{len(image_paths)}: {image_path}")
             result = self.extract(image_path)
-            results.append({"image": image_path, "result": result})
+            results.append({"image": os.path.basename(image_path), "result": result})
+        
+        total_end_time = time.time()
+        self.logger.info(f"Batch extraction for {len(image_paths)} images completed in {total_end_time - total_start_time:.2f} seconds.")
         return results
 
 
@@ -172,7 +192,8 @@ class RemoteVLLMExtractor(VLMExtractor):
         Extracts a number from the given image by sending a request to the vLLM server.
         Adds debug logging for request payload, response, and errors.
         """
-        import base64, json, requests, os
+        import base64, json, requests, os, time
+        start_time = time.time()
         self.logger.info(f"Preparing to extract bib number from image: {image_path}")
         image_size = os.path.getsize(image_path)
         self.logger.info(f"Image file size: {image_size} bytes")
@@ -224,7 +245,10 @@ class RemoteVLLMExtractor(VLMExtractor):
                 text = text[:-3]
             text = text.strip()
             self.logger.info(f"Parsed model output: {text}")
-            return json.loads(text)
+            result = json.loads(text)
+            end_time = time.time()
+            self.logger.info(f"Remote extraction for {os.path.basename(image_path)} completed in {end_time - start_time:.2f} seconds.")
+            return result
         except requests.exceptions.RequestException as e:
             self.logger.error(f"HTTP request failed: {e}")
             return {"error": f"HTTP request failed: {e}"}

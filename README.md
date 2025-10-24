@@ -19,6 +19,29 @@ This project uses Poetry for dependency management. To install the necessary dep
     poetry install
     ```
 
+3.  **Install PyTorch with CUDA Support** (for GPU-accelerated models):
+
+    After installing dependencies, you need to install PyTorch with CUDA support for GPU acceleration:
+
+    **For systems with NVIDIA GPU (CUDA 12.1 compatible):**
+    ```bash
+    poetry run pip uninstall -y torch torchvision torchaudio
+    poetry run pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+    ```
+
+    **For CPU-only systems or if you don't have an NVIDIA GPU:**
+    ```bash
+    poetry run pip uninstall -y torch torchvision torchaudio
+    poetry run pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+    ```
+
+    **Verify your installation:**
+    ```bash
+    poetry run python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA available: {torch.cuda.is_available()}')"
+    ```
+
+    **Note:** GPU systems should show `CUDA available: True`. The CUDA 12.1 build is compatible with NVIDIA drivers supporting CUDA 12.1 and later (including CUDA 13.0).
+
 ## Usage
 
 Once the installation is complete, you can use the `image-recog` command to extract numbers from images.

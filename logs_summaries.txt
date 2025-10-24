@@ -1,0 +1,6 @@
+Run Timestamp: 2025-10-24 11:16:41
+Extractor Used: qwen-inline-gpu
+Image Folder: C:\Users\gerar\Projects\image-recog\tests\test_images
+Number of Images: 5
+Total Execution Time: 33.34 seconds
+--------------------------------------------------
