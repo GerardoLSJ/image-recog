@@ -23,11 +23,19 @@ def run(
     extractor: ExtractorType = typer.Option(
         ExtractorType.OCR, help="Extractor to use."
     ),
+    scale_width: int = typer.Option(
+        None, help="Maximum width to scale the image."
+    ),
+    scale_height: int = typer.Option(
+        None, help="Maximum height to scale the image."
+    ),
 ):
     """
     Extracts information from an image using the specified extractor.
     """
-    result = extract_bib_number(image_path, extractor.value)
+    result = extract_bib_number(
+        image_path, extractor.value, scale_width, scale_height
+    )
     if "bib" in result:
         print(f"Bib number found: {result['bib']}")
     elif "error" in result:

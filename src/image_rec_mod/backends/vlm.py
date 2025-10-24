@@ -8,6 +8,9 @@ from qwen_vl_utils import process_vision_info
 from image_rec_mod.extractor import Extractor
 import requests
 import base64
+from image_rec_mod.utils import ImageScaler
+from typing import Optional
+from io import BytesIO
 
 
 class VLMExtractor(Extractor):
@@ -25,11 +28,12 @@ class LocalVLMExtractor(VLMExtractor):
     Extractor for Vision Language Models running locally.
     """
 
-    def __init__(self, model_name: str, device: str = "cpu"):
+    def __init__(self, model_name: str, device: str = "cpu", scaler: Optional[ImageScaler] = None):
         """
         Initializes the extractor by loading the model and processor.
         Adds debug logging for CUDA and model loading.
         """
+        self.scaler = scaler
         import logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger("vlm_debug")
@@ -77,11 +81,23 @@ class LocalVLMExtractor(VLMExtractor):
         """
         start_time = time.time()
         self.logger.info(f"Extracting bib number from: {image_path}")
+
+        image_to_process = image_path
+        if self.scaler:
+            self.logger.info(f"Scaling image: {image_path}")
+            scaled_image = self.scaler.scale(image_path)
+            # Create a temporary path for the scaled image
+            _, ext = os.path.splitext(image_path)
+            temp_image_path = str(image_path).replace(ext, f"_scaled{ext}")
+            scaled_image.save(temp_image_path)
+            image_to_process = temp_image_path
+            self.logger.info(f"Using scaled image: {image_to_process}")
+
         messages = [
             {
                 "role": "user",
                 "content": [
-                    {"type": "image", "image": f"file://{os.path.abspath(image_path)}"},
+                    {"type": "image", "image": f"file://{os.path.abspath(image_to_process)}"},
                     {"type": "text", "text": """You are a specialized image analyzer for extracting runner bib numbers.
 
 TASK: Identify and extract the bib number worn on a runner's chest/torso.
@@ -153,17 +169,41 @@ Failure cases:
             self.logger.error(f"An error occurred during extraction: {e}")
             return {"error": f"An error occurred: {e}"}
 
-    def extract_multiple_bib_numbers(self, image_paths: list[str]) -> list[dict]:
+    def extract_multiple_bib_numbers(
+        self, 
+        image_paths: list[str], 
+        scale_width: Optional[int] = None, 
+        scale_height: Optional[int] = None
+    ) -> list[dict]:
         """
         Extracts bib numbers from a list of images.
+        
+        Args:
+            image_paths: List of paths to image files.
+            scale_width: Optional maximum width to scale images.
+            scale_height: Optional maximum height to scale images.
+        
+        Returns:
+            List of dictionaries containing image names and extraction results.
         """
         total_start_time = time.time()
         self.logger.info(f"Starting batch extraction for {len(image_paths)} images.")
+        
+        # Create temporary scaler if scale parameters are provided
+        original_scaler = self.scaler
+        if scale_width and scale_height:
+            self.logger.info(f"Using temporary scaler with dimensions: {scale_width}x{scale_height}")
+            self.scaler = ImageScaler(scale_width, scale_height)
+        
         results = []
-        for i, image_path in enumerate(image_paths):
-            self.logger.info(f"Processing image {i+1}/{len(image_paths)}: {image_path}")
-            result = self.extract(image_path)
-            results.append({"image": os.path.basename(image_path), "result": result})
+        try:
+            for i, image_path in enumerate(image_paths):
+                self.logger.info(f"Processing image {i+1}/{len(image_paths)}: {image_path}")
+                result = self.extract(image_path)
+                results.append({"image": os.path.basename(image_path), "result": result})
+        finally:
+            # Restore original scaler
+            self.scaler = original_scaler
         
         total_end_time = time.time()
         self.logger.info(f"Batch extraction for {len(image_paths)} images completed in {total_end_time - total_start_time:.2f} seconds.")
@@ -175,11 +215,12 @@ class RemoteVLLMExtractor(VLMExtractor):
     Extractor for Vision Language Models served with vLLM.
     """
 
-    def __init__(self, model_name: str, url="http://localhost:8000/v1/chat/completions"):
+    def __init__(self, model_name: str, url="http://localhost:8000/v1/chat/completions", scaler: Optional[ImageScaler] = None):
         """
         Initializes the extractor with the vLLM server URL and model name.
         Adds debug logging for HTTP requests and responses.
         """
+        self.scaler = scaler
         import logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger("remote_vllm_debug")
@@ -195,11 +236,19 @@ class RemoteVLLMExtractor(VLMExtractor):
         import base64, json, requests, os, time
         start_time = time.time()
         self.logger.info(f"Preparing to extract bib number from image: {image_path}")
-        image_size = os.path.getsize(image_path)
-        self.logger.info(f"Image file size: {image_size} bytes")
-        with open(image_path, "rb") as image_file:
-            image_bytes = image_file.read()
-            encoded_string = base64.b64encode(image_bytes).decode("utf-8")
+
+        image_bytes = b""
+        if self.scaler:
+            self.logger.info(f"Scaling image: {image_path}")
+            scaled_image = self.scaler.scale(image_path)
+            buffer = BytesIO()
+            scaled_image.save(buffer, format="JPEG")
+            image_bytes = buffer.getvalue()
+        else:
+            with open(image_path, "rb") as image_file:
+                image_bytes = image_file.read()
+
+        encoded_string = base64.b64encode(image_bytes).decode("utf-8")
         self.logger.info(f"Base64 encoded image length: {len(encoded_string)} characters")
         headers = {"Content-Type": "application/json"}
         data = {

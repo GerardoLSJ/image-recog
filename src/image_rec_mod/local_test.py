@@ -8,10 +8,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from image_rec_mod.main import get_extractor # Import the new function
 
-def test_image_folder():
+def test_image_folder(scale_width=500, scale_height=500):
     """
     Iterates through images in the test folder, extracts bib numbers efficiently,
     and prints them.
+    
+    Args:
+        scale_width: Maximum width to scale images. Defaults to 500.
+        scale_height: Maximum height to scale images. Defaults to 500.
     """
     start_time = time.time()
     extractor_name = "qwen-inline-gpu"
@@ -19,6 +23,7 @@ def test_image_folder():
     folder_to_test = project_root / "tests" / "test_images"
 
     print(f"Testing images in: {folder_to_test}")
+    print(f"Using image scaling: {scale_width}x{scale_height}")
 
     image_extensions = [".jpg", ".jpeg", ".png", ".webp"]
     image_paths = [
@@ -37,7 +42,9 @@ def test_image_folder():
         print("Model loaded. Extracting bib numbers...")
 
         # 2. Process all images with the new method
-        results = extractor.extract_multiple_bib_numbers(image_paths)
+        results = extractor.extract_multiple_bib_numbers(
+            image_paths, scale_width, scale_height
+        )
 
         # 3. Print results
         for item in results:
@@ -61,6 +68,7 @@ def test_image_folder():
             f"Extractor Used: {extractor_name}\n"
             f"Image Folder: {folder_to_test}\n"
             f"Number of Images: {len(image_paths)}\n"
+            f"Image Scaling: {scale_width}x{scale_height}\n"
             f"Total Execution Time: {total_time:.2f} seconds\n"
             f"--------------------------------------------------\n"
         )
