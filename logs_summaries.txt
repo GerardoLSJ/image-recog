@@ -4,3 +4,59 @@ Image Folder: C:\Users\gerar\Projects\image-recog\tests\test_images
 Number of Images: 5
 Total Execution Time: 33.34 seconds
 --------------------------------------------------
+Run Timestamp: 2025-10-26 09:16:23
+Extractor Used: smol-inline-gpu
+Image Folder: C:\Users\gerar\Projects\image-recog\tests\test_images
+Number of Images: 7
+Image Scaling: 500x500
+Total Execution Time: 0.78 seconds
+--------------------------------------------------
+Run Timestamp: 2025-10-26 09:17:36
+Extractor Used: smol-inline-gpu
+Image Folder: C:\Users\gerar\Projects\image-recog\tests\test_images
+Number of Images: 7
+Image Scaling: 500x500
+Total Execution Time: 0.77 seconds
+--------------------------------------------------
+Run Timestamp: 2025-10-26 09:27:29
+Extractor Used: smol-inline-gpu
+Image Folder: C:\Users\gerar\Projects\image-recog\tests\test_images
+Number of Images: 7
+Image Scaling: 500x500
+Total Execution Time: 213.54 seconds
+--------------------------------------------------
+Run Timestamp: 2025-10-26 09:35:17
+Extractor Used: smol-inline-gpu
+Image Folder: C:\Users\gerar\Projects\image-recog\tests\test_images
+Number of Images: 7
+Image Scaling: 500x500
+Total Execution Time: 325.39 seconds
+--------------------------------------------------
+Run Timestamp: 2025-10-27 18:48:25
+Extractor Used: smol-inline-hpu
+Image Folder: C:\Users\gerar\Projects\image-recog\tests\test_images
+Number of Images: 12
+Image Scaling: 500x500
+Total Execution Time: 0.01 seconds
+--------------------------------------------------
+Run Timestamp: 2025-10-27 18:51:12
+Extractor Used: smol-inline-gpu
+Image Folder: C:\Users\gerar\Projects\image-recog\tests\test_images
+Number of Images: 12
+Image Scaling: 500x500
+Total Execution Time: 79.83 seconds
+--------------------------------------------------
+Run Timestamp: 2025-10-27 18:52:20
+Extractor Used: smol-inline-gpu
+Image Folder: C:\Users\gerar\Projects\image-recog\tests\test_images
+Number of Images: 11
+Image Scaling: 500x500
+Total Execution Time: 0.01 seconds
+--------------------------------------------------
+Run Timestamp: 2025-10-27 18:54:34
+Extractor Used: smol-inline-gpu
+Image Folder: C:\Users\gerar\Projects\image-recog\tests\test_images
+Number of Images: 11
+Image Scaling: 500x500
+Total Execution Time: 60.83 seconds
+--------------------------------------------------

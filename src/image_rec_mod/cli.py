@@ -13,6 +13,8 @@ class ExtractorType(str, Enum):
     GEMINI_FLASH = "gemini-flash"
     QWEN_INLINE_CPU = "qwen-inline-cpu"
     QWEN_INLINE_GPU = "qwen-inline-gpu"
+    SMOL_INLINE_CPU = "smol-inline-cpu"
+    SMOL_INLINE_GPU = "smol-inline-gpu"
     QWEN_VLLM = "qwen-vllm"
     SMOL_VLLM = "smol-vllm"
 

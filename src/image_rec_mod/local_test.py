@@ -2,23 +2,24 @@ import sys
 from pathlib import Path
 import time
 from datetime import datetime
+import argparse
 
 # Add the 'src' directory to the Python path to allow running this script directly
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from image_rec_mod.main import get_extractor # Import the new function
 
-def test_image_folder(scale_width=500, scale_height=500):
+def test_image_folder(extractor_name="qwen-inline-gpu", scale_width=500, scale_height=500):
     """
     Iterates through images in the test folder, extracts bib numbers efficiently,
     and prints them.
     
     Args:
+        extractor_name: Name of the extractor to use. Defaults to "qwen-inline-gpu".
         scale_width: Maximum width to scale images. Defaults to 500.
         scale_height: Maximum height to scale images. Defaults to 500.
     """
     start_time = time.time()
-    extractor_name = "qwen-inline-gpu"
     project_root = Path(__file__).resolve().parent.parent.parent
     folder_to_test = project_root / "tests" / "test_images"
 
@@ -80,5 +81,65 @@ def test_image_folder(scale_width=500, scale_height=500):
         print(f"\nSummary written to {summary_file}")
 
 
+def main():
+    """Entry point for the local-test script."""
+    parser = argparse.ArgumentParser(
+        description="Test bib number extraction on images in the test folder.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Available extractors:
+  qwen-inline-cpu       Qwen2-VL-2B on CPU
+  qwen-inline-gpu       Qwen2-VL-2B on GPU (default)
+  smol-inline-cpu       SmolVLM-2.2B on CPU
+  smol-inline-gpu       SmolVLM-2.2B on GPU
+  qwen-vllm             Qwen via vLLM server
+  smol-vllm             SmolVLM via vLLM server
+  gemini-flash          Google Gemini Flash (remote)
+  ocr                   Tesseract OCR
+
+Examples:
+  poetry run local-test
+  poetry run local-test --extractor smol-inline-gpu
+  poetry run local-test --extractor qwen-inline-cpu --width 800 --height 600
+        """
+    )
+
+    parser.add_argument(
+        "--extractor", "-e",
+        type=str,
+        default="qwen-inline-gpu",
+        help="Name of the extractor to use (default: qwen-inline-gpu)"
+    )
+
+    parser.add_argument(
+        "--width", "-w",
+        type=int,
+        default=500,
+        help="Maximum width to scale images (default: 500)"
+    )
+
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=500,
+        help="Maximum height to scale images (default: 500)"
+    )
+
+    args = parser.parse_args()
+
+    print("=" * 60)
+    print(f"Bib Number Extraction Test")
+    print("=" * 60)
+    print(f"Extractor: {args.extractor}")
+    print("=" * 60)
+    print()
+
+    test_image_folder(
+        extractor_name=args.extractor,
+        scale_width=args.width,
+        scale_height=args.height
+    )
+
+
 if __name__ == "__main__":
-    test_image_folder()
+    main()

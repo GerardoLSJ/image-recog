@@ -8,7 +8,8 @@
       "Bash(powershell.exe -Command \"[Environment]::SetEnvironmentVariable(''Path'', [Environment]::GetEnvironmentVariable(''Path'', ''User'') + '';C:\\Users\\gerar\\AppData\\Roaming\\Python\\Scripts'', ''User'')\")",
       "Bash(python:*)",
       "Bash(poetry run python:*)",
-      "Bash(poetry run pip:*)"
+      "Bash(poetry run pip:*)",
+      "Bash(poetry local-test:*)"
     ],
     "deny": []
   }

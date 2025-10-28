@@ -3,7 +3,20 @@
 This project is a command-line interface (CLI) application to extract numerical data from images using a modular architecture that supports various extraction backends like OCR, VLM, and LLM.
 
 ## Installation
+      ```bash
+poetry run pip uninstall torch torchvision -y
+poetry run pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+```
 
+## Run
+      ```bash
+
+poetry run image-recog C:\Users\gerar\Projects\image-recog\tests\test_images\test6.webp --extractor smol-inline-gpu
+
+
+
+
+```
 This project uses Poetry for dependency management. To install the necessary dependencies and the application itself, follow these steps:
 
 1.  **Install Tesseract OCR**:
